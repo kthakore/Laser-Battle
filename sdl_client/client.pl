@@ -11,31 +11,45 @@ my $app = SDLx::App->new( title => 'Evil Cloud Robots', eoq => 1);
 
 
 # Our callback to get the current game status
-my $game_status;
+my $game_status = { message => 'Connecting' };
+
+			$app->draw_rect([0,0,$app->w, $app->h], 0);
+			$app->draw_gfx_text([10,10],0xff0000ff, "message: ".$game_status->{message} );
+			$app->update();
+
+
+my $timed_update = 0;
 my $update_status_content =
 sub 
 {
+	my( $step, $app, $t) = @_;
 
-	my $json_status = get("http://isuckatdomains.net:3000/status");
-
-	my $status = JSON::Any->from_json($json_status);
-
-	if( $status)
+	if(($t - $timed_update) < 0.40)
 	{
-		$game_status = $status;
+		return;	
+	}
+
+	$timed_update = $t;
+	my $json_status = get("http://localhost:3000/status");
+
+	if( $json_status )
+	{
+		my $status = JSON::Any->from_json($json_status) ;
+
+		if( $status)
+		{
+			$game_status = $status;
+
+			$app->draw_rect([0,0,$app->w, $app->h], 0);
+			$app->draw_gfx_text([10,10],0xff0000ff, "message: ".$game_status->{message} );
+			$app->update();
+
+		}
 	}
 
 };
 
 $app->add_move_handler( $update_status_content );
-
-$app->add_show_handler( sub {
-
-	$app->draw_rect([0,0,$app->w, $app->h], 0);
-	$app->draw_gfx_text([10,10],0xFF0000FF, "Message: ".$game_status->{message} );
-	$app->update();
-
-}  );
 
 $app->run();
 
