@@ -33,6 +33,16 @@ sub index :Path :Args(0) {
    # $c->response->body( $c->welcome_message );
 }
 
+sub status :Chained('/') PathPart('status') Args(0) {
+	my ($self, $c) = @_;
+
+	$c->stash->{message} = 'test';
+	
+	$c->forward('View::JSON');
+
+
+}
+
 =head2 default
 
 Standard 404 error page
