@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
-<link media="only screen and (max-device-width: 480px)" href="[% c.uri_for('/static') %]style.css" type= "text/css" rel="stylesheet" />
+<link media="only screen and (max-device-width: 480px)" href="[% c.uri_for('/static/') %]style.css" type= "text/css" rel="stylesheet" />
 
 </head>
 <body>
