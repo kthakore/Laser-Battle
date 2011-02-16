@@ -1,0 +1,66 @@
+body {
+background-color: #fff;
+}
+
+.header, .footer {
+width: 100%;
+}
+
+
+.sidebar {
+display: none;
+}
+
+
+/* REQUIRED BUTTON STYLES: */		
+button { 
+	position: relative;
+	border: 0; 
+	padding: 0;
+	cursor: pointer;
+	overflow: visible; /* removes extra side padding in IE */
+}
+
+button::-moz-focus-inner {
+	border: none;  /* overrides extra padding in Firefox */
+}
+
+button span { 
+	position: relative;
+	display: block; 
+	white-space: nowrap;	
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+	/* Safari and Google Chrome only - fix margins */
+	button span {
+		margin-top: -1px;
+	}
+}
+
+
+/* OPTIONAL BUTTON STYLES for applying custom look and feel: */		
+button.submitBtn { 
+	padding: 0 15px 0 0; 
+	margin-right:5px; 
+	font-size:2em; 
+	text-align: center; 
+	background: transparent url(images/btn_blue_sprite.gif) no-repeat right -140px; 
+}
+	
+button.submitBtn span {
+	padding: 13px 0 0 15px; 
+	height:37px; 
+	background: transparent url(images/btn_blue_sprite.gif) no-repeat left top; 
+	color:#fff; 
+}
+	
+button.submitBtn:hover, button.submitBtnHover { /* the redundant class is used to apply the hover state with a script */
+	background-position: right -210px; 
+}
+	
+button.submitBtn:hover span, button.submitBtnHover span {
+	background-position: 0 -70px;
+}
+
+

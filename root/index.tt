@@ -1,14 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
+<head>
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+<link media="only screen and (max-device-width: 480px)" href="[% c.uri_for('/') %]style.css" type= "text/css" rel="stylesheet" />
+
+</head>
 <body>
+<div class="header"> </div>
 <p>
 Welcome Killer Bot [% bot.id %].
 </p>
 <form>
 <br />
-<input type="button" value="Attack" />
+<button value="Attack" />
 <br />
-<input type="button" value="Warp Away" />
+<button value="Warp Away" />
 </form>
+<div class="footer"> </div>
 </body>
 </html>
