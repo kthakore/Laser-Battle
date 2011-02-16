@@ -12,9 +12,9 @@ Welcome Killer Bot [% bot.id %].
 </p>
 <form>
 <br />
-<button value="Attack" />
+<input type="button" value="Attack" />
 <br />
-<button value="Warp Away" />
+<input type="button" value="Warp Away" />
 </form>
 <div class="footer"> </div>
 </body>
