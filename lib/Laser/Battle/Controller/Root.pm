@@ -45,8 +45,8 @@ sub index :Path :Args(0) {
 	{
 
 	   	# Create a robot 
-		my $x = int(rand() % 600);
-		my $y = int(rand() % 480);
+		my $x = int(rand() * 600);
+		my $y = int(rand() * 480);
 
 		my $health = 100;
 		my $xp = 0;
