@@ -24,7 +24,7 @@ sub
 {
 	my( $step, $app, $t) = @_;
 
-	if(($t - $timed_update) < 0.40)
+	if(($t - $timed_update) < 0.6)
 	{
 		return;	
 	}
