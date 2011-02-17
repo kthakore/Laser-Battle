@@ -78,6 +78,46 @@ sub add_robot_id :Local {
 
 }
 
+sub warp :Chained('/') PathPart('warp') Args(0) {
+	my($self, $c) = @_;
+
+		my $r_id = $self->get_robot_id($c);
+	my $robot;
+	if( $r_id )
+	{
+	
+		$robot = $c->model('DB::Robot')->find( $r_id );
+
+	}
+		   	# Create a robot 
+		my $x = int(rand() * 600);
+		my $y = int(rand() * 480);
+
+	if( $robot )
+	{
+		$robot->update(
+		{ x=> $x, y => $y }
+		);
+
+	$c->stash->{x} = $x;
+	$c->stash->{y} = $y;
+	
+
+
+	}
+
+	$c->forward('View::JSON');
+
+
+}
+
+sub attack :Chained('/') PathPart('attack') Args(0) {
+	my ($self, $c) = @_;
+	
+	
+
+}
+
 sub status :Chained('/') PathPart('status') Args(0) {
 	my ($self, $c) = @_;
 
