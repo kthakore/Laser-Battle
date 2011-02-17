@@ -1,11 +1,6 @@
 package Laser::Battle::Controller::Root;
 use Moose;
 use Data::Dumper;
-use Catalyst qw/
-	Session
-	Session::Store::FastMmap
-	Session::State::Cookie
-/;
 use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
@@ -57,7 +52,7 @@ sub index :Path :Args(0) {
 		my $xp = 0;
 
 
-		$robot =	$c->model('DB::Robot')->create(
+		$robot = $c->model('DB::Robot')->create(
 		{
 			x => $x, y => $y, health => $health, xp => $xp,
 
