@@ -30,19 +30,21 @@ The root page (/)
 sub index :Path :Args(0) {
     my ( $self, $c ) = @_;
 
-   	# Create a robot 
-	my $x = int(rand() % 600);
-	my $y = int(rand() % 480);
-
-	my $health = 100;
-	my $xp = 0;
-
 	my $robot = $c->model('DB::Robot')->search(
 		{ ipaddress => $c->request->{ipaddress} }
 		)->single();
 
 	unless ($robot)
 	{
+
+	   	# Create a robot 
+		my $x = int(rand() % 600);
+		my $y = int(rand() % 480);
+
+		my $health = 100;
+		my $xp = 0;
+
+
 		$robot =	$c->model('DB::Robot')->create(
 		{
 			x => $x, y => $y, health => $health, xp => $xp,
@@ -59,7 +61,18 @@ sub status :Chained('/') PathPart('status') Args(0) {
 
 	my @robots = $c->model('DB::Robot')->all();
 
-	$c->stash->{robots} = \@robots;
+	my @send_bots; 
+	foreach( @robots )
+	{
+		my $x = $_->x; my $y = $_->y; my $h = $_->health; my $xp = $_->xp;
+		
+		push( @send_bots, 	{
+			x => $x, y => $y, health => $h, xp => $xp,
+				} );
+	}
+
+	$c->stash->{robots} = \@send_bots;
+
 	$c->stash->{message} = 'test';
 	
 	$c->forward('View::JSON');
