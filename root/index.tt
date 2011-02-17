@@ -52,6 +52,32 @@ XP: [% bot.xp %] Health: [% bot.health %]
 <br />
 <input type="button" value="Warp Away" onclick="warp()"/>
 </form>
+<div id="canvas"> </div>
 <div class="footer"> </div>
+<script>
+	
+	function canvas_update()
+	{  $.ajax({
+						type: "GET",
+						url: "[% c.uri_for('/status') %]",
+						dataType: "json",
+						cache: false,
+						success: function(json){
+								$('#canvas').html('');
+								for(i=0; i < json.robots.length; i++)
+								{
+									var robot = json.robots[i];
+									$('#canvas').append(' <div style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px ">'+robot['id']+'</div>' );
+								}
+							}
+						});
+
+	}
+
+
+	setInterval( 'canvas_update()', 400 );
+
+
+</script>
 </body>
 </html>

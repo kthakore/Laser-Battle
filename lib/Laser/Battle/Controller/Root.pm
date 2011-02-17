@@ -129,7 +129,7 @@ sub status :Chained('/') PathPart('status') Args(0) {
 		my $x = $_->x; my $y = $_->y; my $h = $_->health; my $xp = $_->xp;
 		
 		push( @send_bots, 	{
-			x => $x, y => $y, health => $h, xp => $xp,
+			x => $x, y => $y, health => $h, xp => $xp, id => $_->id
 				} );
 	}
 
