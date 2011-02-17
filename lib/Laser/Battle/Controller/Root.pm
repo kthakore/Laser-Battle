@@ -1,9 +1,16 @@
 package Laser::Battle::Controller::Root;
 use Moose;
 use Data::Dumper;
+use Catalyst qw/
+	Session
+	Session::Store::FastMmap
+	Session::State::Cookie
+/;
 use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
+
+
 
 #
 # Sets the actions in this controller to be registered with no prefix
@@ -30,10 +37,15 @@ The root page (/)
 sub index :Path :Args(0) {
     my ( $self, $c ) = @_;
 
-	my $robot = $c->model('DB::Robot')->search(
-		{ ipaddress => $c->request->{ipaddress} }
-		)->single();
+	my $r_id = $self->get_robot_id($c);
+	my $robot;
+	if( $r_id )
+	{
+	
+		$robot = $c->model('DB::Robot')->find( $r_id );
 
+	}
+	
 	unless ($robot)
 	{
 
@@ -48,12 +60,27 @@ sub index :Path :Args(0) {
 		$robot =	$c->model('DB::Robot')->create(
 		{
 			x => $x, y => $y, health => $health, xp => $xp,
-			ipaddress => $c->request->{ipaddress}
+
 		});
+
+		$self->add_robot_id( $c, $robot->id() );
 	}
 	$c->stash->{bot} = $robot;	
 	
 	
+}
+
+sub get_robot_id :Local {
+	my ($self, $c) = @_;
+
+		return $c->session->{robot} 
+}
+
+sub add_robot_id :Local {
+	my ($self, $c, $robot_id) = @_;
+
+		$c->session->{robot} = $robot_id;
+
 }
 
 sub status :Chained('/') PathPart('status') Args(0) {

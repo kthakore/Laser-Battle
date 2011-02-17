@@ -2,7 +2,7 @@
 CREATE TABLE Robot (
 
 	id INTEGER PRIMARY KEY,
-	ipaddress TEXT KEY,
+	session_id TEXT,
 	x INTEGER,
 	y INTEGER,
 	health INTEGER,

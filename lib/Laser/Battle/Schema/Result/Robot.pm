@@ -29,9 +29,9 @@ __PACKAGE__->table("Robot");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 ipaddress
+=head2 session_id
 
-  data_type: 'text key'
+  data_type: 'text'
   is_nullable: 1
 
 =head2 x
@@ -59,8 +59,8 @@ __PACKAGE__->table("Robot");
 __PACKAGE__->add_columns(
   "id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
-  "ipaddress",
-  { data_type => "text key", is_nullable => 1 },
+  "session_id",
+  { data_type => "text", is_nullable => 1 },
   "x",
   { data_type => "integer", is_nullable => 1 },
   "y",
@@ -73,8 +73,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-02-16 22:08:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:u1frP5EaPErxYU0hOAAsmg
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-02-17 01:10:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fBI4Clqq2oMaEb6Mkk+MzQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

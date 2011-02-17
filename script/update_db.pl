@@ -1,5 +1,5 @@
 
-unlink robots.db;
+`rm robots.db`;
 
 `sqlite3 robots.db < robots.sql`;
 

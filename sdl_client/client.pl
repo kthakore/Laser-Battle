@@ -7,6 +7,9 @@ use SDLx::Surface;
 use LWP::Simple;
 use JSON::Any;
 
+my $uri = $ARGV[0];
+   $uri = 'http://localhost:3000' unless $uri;
+
 # Create our SDL application, tell it to exit when we trigger a quit event
 my $app = SDLx::App->new( title => 'Evil Cloud Robots', eoq => 1);
 
@@ -14,11 +17,6 @@ my $robot_img = SDLx::Surface::load( name => 'sdl_client/robot.png' );
 
 # Our callback to get the current game status
 my $game_status = { message => 'Connecting' };
-
-			$app->draw_rect([0,0,$app->w, $app->h], 0);
-			$app->draw_gfx_text([10,10],0xff0000ff, "message: ".$game_status->{message} );
-			$app->update();
-
 
 my $timed_update = 0;
 my $update_status_content =
@@ -32,7 +30,7 @@ sub
 	}
 
 	$timed_update = $t;
-	my $json_status = get("http://localhost:3000/status");
+	my $json_status = get($uri.'/status');
 
 	if( $json_status )
 	{
