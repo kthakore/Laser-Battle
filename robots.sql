@@ -1,0 +1,11 @@
+
+CREATE TABLE Robot (
+
+	id INTEGER PRIMARY KEY,
+	ipaddress TEXT KEY,
+	x INTEGER,
+	y INTEGER,
+	health INTEGER,
+	xp INTEGER
+
+);

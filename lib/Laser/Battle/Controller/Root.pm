@@ -1,5 +1,6 @@
 package Laser::Battle::Controller::Root;
 use Moose;
+use Data::Dumper;
 use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
@@ -29,17 +30,39 @@ The root page (/)
 sub index :Path :Args(0) {
     my ( $self, $c ) = @_;
 
-    # Hello World
-   # $c->response->body( $c->welcome_message );
+   	# Create a robot 
+	my $x = int(rand() % 600);
+	my $y = int(rand() % 480);
+
+	my $health = 100;
+	my $xp = 0;
+
+	my $robot = $c->model('DB::Robot')->search(
+		{ ipaddress => $c->request->{ipaddress} }
+		)->single();
+
+	unless ($robot)
+	{
+		$robot =	$c->model('DB::Robot')->create(
+		{
+			x => $x, y => $y, health => $health, xp => $xp,
+			ipaddress => $c->request->{ipaddress}
+		});
+	}
+	$c->stash->{bot} = $robot;	
+	
+	
 }
 
 sub status :Chained('/') PathPart('status') Args(0) {
 	my ($self, $c) = @_;
 
+	my @robots = $c->model('DB::Robot')->all();
+
+	$c->stash->{robots} = \@robots;
 	$c->stash->{message} = 'test';
 	
 	$c->forward('View::JSON');
-
 
 }
 
