@@ -52,7 +52,8 @@ XP: [% bot.xp %] Health: [% bot.health %]
 <br />
 <input type="button" value="Warp Away" onclick="warp()"/>
 </form>
-<div id="canvas"> </div>
+<br />
+<div id="canvas" style="width:800px; height:600px; border: 1px black solid;" > </div>
 <div class="footer"> </div>
 <script>
 	
@@ -67,7 +68,7 @@ XP: [% bot.xp %] Health: [% bot.health %]
 								for(i=0; i < json.robots.length; i++)
 								{
 									var robot = json.robots[i];
-									$('#canvas').append(' <div style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px ">'+robot['id']+'</div>' );
+									$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px " alt="'+robot['id']+'" />' );
 								}
 							}
 						});
