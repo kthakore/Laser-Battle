@@ -62,7 +62,7 @@ sub
 
 };
 
-
+$hero->attach();
 $app->add_move_handler( $update_status_content );
 
 $app->run();

@@ -5,6 +5,8 @@ use warnings;
 use SDL;
 use JSON;
 use LWP::Simple; 
+use SDL::Event;
+use SDL::Events;
 use SDLx::App;
 
 sub new {
@@ -17,6 +19,15 @@ my $class =shift;
   	 $self->{x} = rand() * $app->w;
  	 $self->{y} = rand() * $app->h;
 	 $self->{hp} = 100;
+	 $self->{pressed} = {};
+
+	 $app->add_event_handler( sub { $self->event_handle(@_) } );
+	 $app->add_move_handler ( sub { $self->move_handle(@_) } );
+
+  }
+  else
+  {
+	die 'Need app';
   }
 
   return $self
@@ -36,12 +47,59 @@ sub hp :lvalue {
  return $_[0]->{hp}
 }
 
+sub pressed :lvalue 
+{
+ return $_[0]->{pressed}
+}
+
 
 # METHODS
-sub move {
-my $self = shift;
-my ($event, $dist) = @_;
+sub attach {
+	my $self = shift;
+	my $app = $self->{app};
+	 $app->add_event_handler( sub { $self->event_handle(@_) } );
+	 $app->add_move_handler ( sub { $self->move_handle(@_) } );
+	warn 'Attached';
 
+}
+sub event_handle {
+	my $self = shift;
+	my ($event,$app) = @_;
+
+	my $key = $event->key_sym;
+	my $name = SDL::Events::get_key_name($key) if $key;
+	    if ( $event->type == SDL_KEYDOWN ) {
+            $self->pressed->{$name} = 1;
+        }
+        elsif ( $event->type == SDL_KEYUP ) {
+            $self->pressed->{$name} = 0;
+        }
+
+
+}
+
+sub move_handle {
+	my $self = shift;
+	my ($dt, $app, $time) = @_;
+
+	my $vel = 3*$dt;
+
+	if( $self->pressed->{left} )
+	{
+		$self->{x} = $self->{x} - $vel;
+	}	
+	if( $self->pressed->{right} )
+	{
+		$self->{x} = $self->{x} + $vel;
+	}
+	if( $self->pressed->{up} )
+	{
+		$self->{y} = $self->{y} - $vel;
+	}	
+	if( $self->pressed->{down} )
+	{
+		$self->{y} = $self->{y} + $vel;
+	}
 
 }
 
