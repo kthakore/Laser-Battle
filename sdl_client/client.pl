@@ -5,15 +5,21 @@ use SDLx::App;
 use SDLx::Surface;
 
 use LWP::Simple;
+#use LWP::Simple::Post qw(post);
 use JSON::Any;
 
+use lib 'lib';
+use Hero;
+
 my $uri = $ARGV[0];
-   $uri = 'http://localhost:3000' unless $uri;
+$uri = 'http://localhost:3000' unless $uri;
 
 # Create our SDL application, tell it to exit when we trigger a quit event
 my $app = SDLx::App->new( title => 'Evil Cloud Robots', eoq => 1);
 
-my $robot_img = SDLx::Surface::load( name => 'sdl_client/robot.png' );
+my $hero = Hero->new( app => $app );
+
+my $robot_img = SDLx::Surface::load( name => 'robot.png' );
 
 # Our callback to get the current game status
 my $game_status = { message => 'Connecting' };
@@ -39,20 +45,23 @@ sub
 		if( $status)
 		{
 			$game_status = $status;
-		$app->draw_rect([0,0,$app->w, $app->h], 0xFFFFFFFF);
+			$app->draw_rect([0,0,$app->w, $app->h], 0xFFFFFFFF);
 
 			foreach( @{$game_status->{robots}} )
 			{
 				$app->blit_by( $robot_img, [0,0,$robot_img->w, $robot_img->h], [$_->{x}, $_->{y}, 100, 100] );
 			}
 
-				$app->draw_gfx_text([10,10],0xff0000ff, "message: ".$game_status->{message} );
+			$app->draw_gfx_text([10,10],0xff0000ff, "message: ".$game_status->{message} );
+			$hero->draw();
+			$hero->send_to_server($uri);
 			$app->update();
 
 		}
 	}
 
 };
+
 
 $app->add_move_handler( $update_status_content );
 

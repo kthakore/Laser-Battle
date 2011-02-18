@@ -9,3 +9,14 @@ CREATE TABLE Robot (
 	xp INTEGER
 
 );
+
+CREATE TABLE Hero (
+
+	id INTEGER PRIMARY KEY,
+	x INTEGER,
+	Y INTEGER,
+	health INTEGER
+
+);
+
+INSERT INTO Hero VALUES ( 0, 0, 0, 100 );

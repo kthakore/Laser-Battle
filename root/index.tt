@@ -69,7 +69,10 @@ XP: [% bot.xp %] Health: [% bot.health %]
 								{
 									var robot = json.robots[i];
 									$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px " alt="'+robot['id']+'" />' );
+								
 								}
+									$('#canvas').append(' <div style=" position: relative; left:'+json.hero.x+'px; top:'+json.hero.y+'px ">Hero</div>' );
+
 							}
 						});
 

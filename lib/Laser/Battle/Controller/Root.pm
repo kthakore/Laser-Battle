@@ -122,6 +122,7 @@ sub status :Chained('/') PathPart('status') Args(0) {
 	my ($self, $c) = @_;
 
 	my @robots = $c->model('DB::Robot')->all();
+	my $hero = $c->model('DB::Hero')->find(0);
 
 	my @send_bots; 
 	foreach( @robots )
@@ -136,8 +137,22 @@ sub status :Chained('/') PathPart('status') Args(0) {
 	$c->stash->{robots} = \@send_bots;
 
 	$c->stash->{message} = 'test';
+	$c->stash->{hero} = { x => $hero->x, y => $hero->y, health => $hero->health };
 	
 	$c->forward('View::JSON');
+
+}
+
+sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
+my ($self, $c) = @_;
+	$c->log->debug( Dumper $c->request->parameters );   
+
+	my $hero = $c->model('DB::Hero')->find(0);
+
+	$hero->update($c->request->parameters );
+
+
+	$c->response->body('done');
 
 }
 
