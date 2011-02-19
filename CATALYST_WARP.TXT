@@ -1,0 +1,11 @@
+
+Catalyst::Helper::PSGI 
+
+ -> script/laser_battle.pl PSGI
+
+Starman plackup
+
+  -> perl Makefile.PL 
+  -> make install
+  -> plackup -s Starman script/laser_battle.psgi
+
