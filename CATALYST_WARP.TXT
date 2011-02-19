@@ -7,5 +7,6 @@ Starman plackup
 
   -> perl Makefile.PL 
   -> make install
-  -> plackup -s Starman script/laser_battle.psgi
+  -> starman --workers 2 script/laser_battle.psgi
+
 
