@@ -125,14 +125,9 @@ sub status :Chained('/') PathPart('status') Args(0) {
 	my $hero = $c->model('DB::Hero')->find(0);
 
 	my @send_bots; 
-	foreach( @robots )
-	{
-		my $x = $_->x; my $y = $_->y; my $h = $_->health; my $xp = $_->xp;
-		
-		push( @send_bots, 	{
-			x => $x, y => $y, health => $h, xp => $xp, id => $_->id
-				} );
-	}
+	map { 
+			push @send_bots, { x => $_->x, y => $_->y, health => $_->health, xp => $_->xp, id => $_->id }  
+		} @robots;	
 
 	$c->stash->{robots} = \@send_bots;
 
