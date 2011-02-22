@@ -203,6 +203,9 @@ my ($self, $c) = @_;
 
 }
 
+
+sub end : ActionClass('RenderView') {}
+
 =head2 default
 
 Standard 404 error page
