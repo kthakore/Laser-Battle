@@ -192,11 +192,12 @@ sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
 my ($self, $c) = @_;
 	$c->log->debug( Dumper $c->request->parameters );   
 
-	my $hero = get_hero( $c->stash('redis') );
+	my $hero = get_hero( $c->stash->{'redis'} );
 	
-	$hero->{x} = $c->request->parameters->{x};
-	$hero->{y} = $c->request->parameters->{y};
-	$hero->{heath} = $c->request->parameters->{health};
+	my $params = $c->request->parameters;
+	$hero->{x} = $params->{x} if $params->{x};
+	$hero->{y} = $params->{y} if $params->{y};
+		$hero->{health} = $params->{health} if $params->{health};
 
 
 	$c->response->body('done');
