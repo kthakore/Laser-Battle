@@ -1,5 +1,7 @@
 package Laser::Battle::Controller::Root;
 use Moose;
+use Redis;
+use Redis::Hash;
 use Data::Dumper;
 use namespace::autoclean;
 
@@ -29,19 +31,27 @@ The root page (/)
 
 =cut
 
+sub auto : Private {
+	my ($self, $c) = @_;
+
+	my $redis = Redis->new( encoding => undef );
+
+	$redis->setnx('total_robots' => 0 ) unless $redis->exists('total_robots');
+
+	$c->stash->{'redis'} = $redis;
+
+
+}
+
 sub index :Path :Args(0) {
     my ( $self, $c ) = @_;
 
 	my $r_id = $self->get_robot_id($c);
 	my $robot;
-	if( $r_id )
-	{
-	
-		$robot = $c->model('DB::Robot')->find( $r_id );
 
-	}
+	my $redis = $c->stash->{redis};
 	
-	unless ($robot)
+	if( !($r_id) && !( $redis->exists('r_'.$r_id.':id') ) )
 	{
 
 	   	# Create a robot 
@@ -52,16 +62,12 @@ sub index :Path :Args(0) {
 		my $xp = 0;
 
 
-		$robot = $c->model('DB::Robot')->create(
-		{
-			x => $x, y => $y, health => $health, xp => $xp,
-
-		});
-
-		$self->add_robot_id( $c, $robot->id() );
+		$robot = init_robot( $redis, $r_id );
+		$self->add_robot_id( $c, $robot->{id} );
 	}
 	$c->stash->{bot} = $robot;	
-	
+
+	$c->stash->{view} = 'root/index.tt';	
 	
 }
 
@@ -78,34 +84,75 @@ sub add_robot_id :Local {
 
 }
 
+sub get_robot :Local {
+	my $redis = shift;
+	my $id = shift;
+
+	my %robot;
+	tie %robot, 'Redis::Hash', 'r_'.$id;
+
+	return \%robot;
+}
+
+sub init_robot :Local {
+	my $redis = shift;
+
+	my $id = $redis->get('total_robots');
+	$redis->incr('total_robots');
+
+	my $r = get_robot( $redis, $id ) ;
+			my $x = int(rand() * 600);
+		my $y = int(rand() * 480);
+
+		my $health = 100;
+		my $xp = 0;
+
+
+	$r->{x} = $x; $r->{y} = $y; $r->{health} = 100; 
+	$r->{xp} = 0; $r->{id} = $id; 
+	
+	return $r
+
+}
+
+sub get_hero :Local {
+	my $redis = shift;
+
+	my %hero;
+	tie %hero, 'Redis::Hash', 'hero';
+
+	unless( $redis->exists( 'hero:id' ) )
+	{
+		$hero{id} = 0;
+		$hero{x} = 0;
+		$hero{y} = 0;
+		$hero{health} = 100;
+
+	}
+	
+	return \%hero;
+}
+
 sub warp :Chained('/') PathPart('warp') Args(0) {
 	my($self, $c) = @_;
 
-		my $r_id = $self->get_robot_id($c);
+	my $r_id = $self->get_robot_id($c);
 	my $robot;
+
+	my $redis = $c->stash->{redis};
+	
+
 	if( $r_id )
 	{
-	
-		$robot = $c->model('DB::Robot')->find( $r_id );
-
+		$robot = get_robot($redis, $r_id);
 	}
-		   	# Create a robot 
 		my $x = int(rand() * 600);
 		my $y = int(rand() * 480);
-
-	if( $robot )
-	{
-		$robot->update(
-		{ x=> $x, y => $y }
-		);
-
+		$robot->{x} = $x;
+		$robot->{y} = $y;
 	$c->stash->{x} = $x;
 	$c->stash->{y} = $y;
 	
-
-
-	}
-
 	$c->forward('View::JSON');
 
 
@@ -121,18 +168,21 @@ sub attack :Chained('/') PathPart('attack') Args(0) {
 sub status :Chained('/') PathPart('status') Args(0) {
 	my ($self, $c) = @_;
 
-	my @robots = $c->model('DB::Robot')->all();
-	my $hero = $c->model('DB::Hero')->find(0);
+	my $redis = $c->stash->{redis};
 
-	my @send_bots; 
-	map { 
-			push @send_bots, { x => $_->x, y => $_->y, health => $_->health, xp => $_->xp, id => $_->id }  
-		} @robots;	
+	my $total_robots = $redis->get('total_robots');
 
-	$c->stash->{robots} = \@send_bots;
+	my @robots;
+	foreach( 0..$total_robots)
+		{ push @robots, get_robot( $redis, $_ ); }
+	
+	my $hero = get_hero($redis);
+	$c->stash->{robots} = \@robots;
 
-	$c->stash->{message} = 'test';
-	$c->stash->{hero} = { x => $hero->x, y => $hero->y, health => $hero->health };
+	$c->stash->{message} = 'Connected ...';
+	$c->stash->{hero} = $hero;
+
+	$c->stash->{redis} = undef;
 	
 	$c->forward('View::JSON');
 
@@ -142,9 +192,11 @@ sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
 my ($self, $c) = @_;
 	$c->log->debug( Dumper $c->request->parameters );   
 
-	my $hero = $c->model('DB::Hero')->find(0);
-
-	$hero->update($c->request->parameters );
+	my $hero = get_hero( $c->stash('redis') );
+	
+	$hero->{x} = $c->request->parameters->{x};
+	$hero->{y} = $c->request->parameters->{y};
+	$hero->{heath} = $c->request->parameters->{health};
 
 
 	$c->response->body('done');
@@ -163,13 +215,6 @@ sub default :Path {
     $c->response->status(404);
 }
 
-=head2 end
-
-Attempt to render a view, if needed.
-
-=cut
-
-sub end : ActionClass('RenderView') {}
 
 =head1 AUTHOR
 
