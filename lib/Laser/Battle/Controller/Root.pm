@@ -84,7 +84,7 @@ sub add_robot_id :Local {
 
 }
 
-sub get_robot :Local {
+sub get_robot {
 	my $redis = shift;
 	my $id = shift;
 
@@ -94,7 +94,7 @@ sub get_robot :Local {
 	return \%robot;
 }
 
-sub init_robot :Local {
+sub init_robot{
 	my $redis = shift;
 
 	my $id = $redis->get('total_robots');
@@ -115,7 +115,7 @@ sub init_robot :Local {
 
 }
 
-sub get_hero :Local {
+sub get_hero {
 	my $redis = shift;
 
 	my %hero;
