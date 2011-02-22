@@ -12,7 +12,7 @@ use lib 'lib';
 use Hero;
 
 my $uri = $ARGV[0];
-$uri = 'http://localhost:3000' unless $uri;
+$uri = 'http://localhost:5000' unless $uri;
 
 # Create our SDL application, tell it to exit when we trigger a quit event
 my $app = SDLx::App->new( title => 'Evil Cloud Robots', eoq => 1);
@@ -36,7 +36,9 @@ sub
 	}
 
 	$timed_update = $t;
-	my $json_status = get($uri.'/status');
+	#my $json_status = get($uri.'/status');
+	 my $json_status = '{ }';
+
 
 	if( $json_status )
 	{
@@ -45,6 +47,7 @@ sub
 		if( $status)
 		{
 			$game_status = $status;
+			$game_status->{message} = ' ';
 			$app->draw_rect([0,0,$app->w, $app->h], 0xFFFFFFFF);
 
 			foreach( @{$game_status->{robots}} )

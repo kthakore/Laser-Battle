@@ -129,7 +129,7 @@ sub send_to_server {
 my $self = shift;
 my $uri = shift;
 
-	get( $uri.'/post_hero?x='.$self->x.'&y='.$self->y.'&health='.$self->hp );
+#	get( $uri.'/post_hero?x='.$self->x.'&y='.$self->y.'&health='.$self->hp );
 
 }
  
