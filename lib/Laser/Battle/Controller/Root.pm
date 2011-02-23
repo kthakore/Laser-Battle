@@ -3,6 +3,7 @@ use Moose;
 use Redis;
 use Redis::Hash;
 use Data::Dumper;
+use JSON;
 use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
@@ -188,6 +189,33 @@ sub status :Chained('/') PathPart('status') Args(0) {
 
 }
 
+sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
+	my ($self, $c) = @_;
+
+	my ($header, $text, $name, $method, $empty);
+
+	$name = $c->request->params('PICometName');
+	$method = $c->request->params('PICometMethod');
+	$empty = $method==3?"<comet></comet>":"";
+	$header = $method==2?"application/x-dom-event-stream":"text/plain";
+	
+
+	my $redis = $c->stash->{redis};
+
+	my $total_robots = $redis->get('total_robots');
+
+	my @robots;
+	foreach( 0..$total_robots)
+		{ push @robots, get_robot( $redis, $_ ); }
+	
+	my $hero = get_hero($redis);
+
+	my $json_send = { message => 'connected', hero => $hero, robots => \@robots };
+
+	$c->response->header( 'Content-Type' => $header );
+	$c->response->body( '<comet>'.encode_json( $json_send).'</comet>' );	
+
+}
 sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
 my ($self, $c) = @_;
 	$c->log->debug( Dumper $c->request->parameters );   
