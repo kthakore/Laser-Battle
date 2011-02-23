@@ -191,31 +191,43 @@ sub status :Chained('/') PathPart('status') Args(0) {
 
 sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
 	my ($self, $c) = @_;
+    my ($header, $text, $name, $method, $empty);
 
-	my ($header, $text, $name, $method, $empty);
+    $name = $c->request->param('PICometName');
+    $method = $c->request->param('PICometMethod');
 
-	$name = $c->request->params('PICometName');
-	$method = $c->request->params('PICometMethod');
-	$empty = $method==3?"<comet></comet>":"";
-	$header = $method==2?"application/x-dom-event-stream":"text/plain";
-	
+    my $redis = $c->stash->{redis};
 
-	my $redis = $c->stash->{redis};
+    my $total_robots = $redis->get('total_robots');
 
-	my $total_robots = $redis->get('total_robots');
+    my @robots;
+    foreach( 0..$total_robots)
+        { push @robots, get_robot( $redis, $_ ); }
 
-	my @robots;
-	foreach( 0..$total_robots)
-		{ push @robots, get_robot( $redis, $_ ); }
-	
-	my $hero = get_hero($redis);
+    my $hero = get_hero($redis);
 
-	my $json_send = { message => 'connected', hero => $hero, robots => \@robots };
+    # my $json_send = { message => 'connected', hero => $hero, robots => \@robots };
+    my $text = "connected!!";
 
-	$c->response->header( 'Content-Type' => $header );
-	$c->response->body( '<comet>'.encode_json( $json_send).'</comet>' );	
+   
+    my $str = "";
+    if ( $method == 1 ) {
+	$header = 'text/plain';
+	$str .= "<comet>$text</comet";
+    } elsif($method == 2) {
+	$header = 'application/x-dom-event-stream';
+	$str .= "Event: $name";
+	$str .= "\ndata: $text\n\n";
+    } elsif( $method == 3 ) {
+	$header = 'text/html';
+	$str .= "<script>parent.PIComet.event.push(\"$text\")</script>";
+    }
 
+	 $c->response->header( 'Content-Type' => $header );
+
+    $c->response->body( $str );
 }
+
 sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
 my ($self, $c) = @_;
 	$c->log->debug( Dumper $c->request->parameters );   

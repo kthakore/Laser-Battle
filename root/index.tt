@@ -62,7 +62,7 @@ XP: [% bot.xp %] Health: [% bot.health %]
 
 	var stream = pi.comet.get(
 		'[% c.uri_for('/status_comet') %]',
-		function (_response) { alert(parseJSON(_response) ); },
+		function (_response) { alert(_response ); },
 		function () { alert('Connection is closed'); }
 
 	);
