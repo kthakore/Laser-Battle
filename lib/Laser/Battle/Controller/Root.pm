@@ -186,9 +186,10 @@ sub status : Chained('/') PathPart('status') Args(0) {
 sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
     my ( $self, $c ) = @_;
     my $redis  = $c->stash->{redis};
-    my $update = $redis->get('update');
-
+    
     while (1) {
+
+		my $update = $redis->get('update');
 
         if ($update) {
 
