@@ -5,7 +5,7 @@
 <link media="only screen and (max-device-width: 480px)" href="[% c.uri_for('/static/') %]style.css" type= "text/css" rel="stylesheet" />
 <script src="[% c.uri_for('/static/javascript/ext/jquery-1.4.4.min.js') %]"
   type="text/javascript"></script>
-<script src="[% c.uri_for('/static/javascript/ext/pi.1.1.1.js') %]"  
+<script src="[% c.uri_for('/static/javascript/ext/pi.1.1.1.min.js') %]"  
   type="text/javascript"></script>
 <script src="[% c.uri_for('/static/javascript/ext/pi.comet.1.2.js') %]"  
   type="text/javascript"></script>
