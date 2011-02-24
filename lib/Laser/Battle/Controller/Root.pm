@@ -33,11 +33,8 @@ The root page (/)
 sub auto : Private {
     my ( $self, $c ) = @_;
 
-    my $redis = Redis->new( encoding => undef );
-
+	my $redis = $c->model('Redis::Single')->redis();
     $redis->setnx( 'total_robots' => 0 ) unless $redis->exists('total_robots');
-
-    $c->stash->{'redis'} = $redis;
 
 }
 
@@ -47,7 +44,7 @@ sub index : Path : Args(0) {
     my $r_id = $self->get_robot_id($c);
     my $robot;
 
-    my $redis = $c->stash->{redis};
+   	my $redis = $c->model('Redis::Single')->redis();
 
     if ( !($r_id) && !( $redis->exists( 'r_' . $r_id . ':id' ) ) ) {
 
@@ -66,6 +63,132 @@ sub index : Path : Args(0) {
     $c->stash->{view} = 'root/index.tt';
 
 }
+
+
+sub warp : Chained('/') PathPart('warp') Args(0) {
+    my ( $self, $c ) = @_;
+
+    my $r_id = $self->get_robot_id($c);
+    my $robot;
+
+   	my $redis = $c->model('Redis::Single')->redis();
+
+    $redis->setnx( 'update' => 1 );
+
+    if ($r_id) {
+        $robot = get_robot( $redis, $r_id );
+    }
+    my $x = int( rand() * 600 );
+    my $y = int( rand() * 480 );
+    $robot->{x}    = $x;
+    $robot->{y}    = $y;
+    $c->stash->{x} = $x;
+    $c->stash->{y} = $y;
+
+
+    $c->forward('View::JSON');
+
+}
+
+sub attack : Chained('/') PathPart('attack') Args(0) {
+    my ( $self, $c ) = @_;
+
+}
+
+sub status : Chained('/') PathPart('status') Args(0) {
+    my ( $self, $c ) = @_;
+
+
+    my $redis = $c->model('Redis::Single')->redis();
+
+    my $total_robots = $redis->get('total_robots');
+
+    my @robots;
+    foreach ( 0 .. $total_robots ) { push @robots, get_robot( $redis, $_ ); }
+
+    my $hero = get_hero($redis);
+    $c->stash->{robots} = \@robots;
+
+    $c->stash->{message} = 'Connected ...';
+    $c->stash->{hero}    = $hero;
+    $c->forward('View::JSON');
+
+}
+
+sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
+    my ( $self, $c ) = @_;
+   
+    my $redis = $c->model('Redis::Single')->redis();
+   
+    while (1) {
+
+		my $update = $redis->get('update');
+
+        if ($update) {
+
+            my $total_robots = $redis->get('total_robots');
+
+            my @robots;
+            foreach ( 0 .. $total_robots ) {
+                push @robots, get_robot( $redis, $_ );
+            }
+
+            my $hero = get_hero($redis);
+            $c->stash->{robots} = \@robots;
+
+            $c->stash->{message} = 'Connected ...';
+            $c->stash->{hero}    = $hero;
+
+            $c->stash->{redis} = undef;
+
+            $c->forward('View::JSON');
+
+            $redis->setnx( 'update' => 0 );
+
+        }
+
+    }
+
+    sleep(3);
+
+}
+
+sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
+    my ( $self, $c ) = @_;
+  
+    my $redis = $c->model('Redis::Single')->redis();
+ 
+	my $hero = get_hero( $c->stash->{'redis'} );
+
+    my $params = $c->request->parameters;
+    $hero->{x}      = $params->{x}      if $params->{x};
+    $hero->{y}      = $params->{y}      if $params->{y};
+    $hero->{health} = $params->{health} if $params->{health};
+
+    $redis->setnx( 'update' => 1 );
+    $c->response->body('done');
+
+}
+
+sub end : ActionClass('RenderView') {
+}
+
+=head2 default
+
+Standard 404 error page
+
+=cut
+
+sub default : Path {
+    my ( $self, $c ) = @_;
+    $c->response->body('Page not found');
+    $c->response->status(404);
+}
+
+=head1 FOO
+
+=cut
+
 
 sub get_robot_id : Local {
     my ( $self, $c ) = @_;
@@ -128,128 +251,6 @@ sub get_hero {
     }
 
     return \%hero;
-}
-
-sub warp : Chained('/') PathPart('warp') Args(0) {
-    my ( $self, $c ) = @_;
-
-    my $r_id = $self->get_robot_id($c);
-    my $robot;
-
-    my $redis = $c->stash->{redis};
-
-    $redis->setnx( 'update' => 1 );
-
-    if ($r_id) {
-        $robot = get_robot( $redis, $r_id );
-    }
-    my $x = int( rand() * 600 );
-    my $y = int( rand() * 480 );
-    $robot->{x}    = $x;
-    $robot->{y}    = $y;
-    $c->stash->{x} = $x;
-    $c->stash->{y} = $y;
-            $c->stash->{redis} = undef;
-
-
-    $c->forward('View::JSON');
-
-}
-
-sub attack : Chained('/') PathPart('attack') Args(0) {
-    my ( $self, $c ) = @_;
-
-}
-
-sub status : Chained('/') PathPart('status') Args(0) {
-    my ( $self, $c ) = @_;
-
-    my $redis = $c->stash->{redis};
-
-    my $total_robots = $redis->get('total_robots');
-
-    my @robots;
-    foreach ( 0 .. $total_robots ) { push @robots, get_robot( $redis, $_ ); }
-
-    my $hero = get_hero($redis);
-    $c->stash->{robots} = \@robots;
-
-    $c->stash->{message} = 'Connected ...';
-    $c->stash->{hero}    = $hero;
-
-    $c->stash->{redis} = undef;
-
-    $c->forward('View::JSON');
-
-}
-
-sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
-    my ( $self, $c ) = @_;
-    my $redis  = $c->stash->{redis};
-    
-    while (1) {
-
-		my $update = $redis->get('update');
-
-        if ($update) {
-
-            my $total_robots = $redis->get('total_robots');
-
-            my @robots;
-            foreach ( 0 .. $total_robots ) {
-                push @robots, get_robot( $redis, $_ );
-            }
-
-            my $hero = get_hero($redis);
-            $c->stash->{robots} = \@robots;
-
-            $c->stash->{message} = 'Connected ...';
-            $c->stash->{hero}    = $hero;
-
-            $c->stash->{redis} = undef;
-
-            $c->forward('View::JSON');
-
-            $redis->setnx( 'update' => 0 );
-
-        }
-
-    }
-
-    sleep(3);
-
-}
-
-sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
-    my ( $self, $c ) = @_;
-    my $redis = $c->stash->{redis};
-    $c->log->debug( Dumper $c->request->parameters );
-
-    my $hero = get_hero( $c->stash->{'redis'} );
-
-    my $params = $c->request->parameters;
-    $hero->{x}      = $params->{x}      if $params->{x};
-    $hero->{y}      = $params->{y}      if $params->{y};
-    $hero->{health} = $params->{health} if $params->{health};
-
-    $redis->setnx( 'update' => 1 );
-    $c->response->body('done');
-
-}
-
-sub end : ActionClass('RenderView') {
-}
-
-=head2 default
-
-Standard 404 error page
-
-=cut
-
-sub default : Path {
-    my ( $self, $c ) = @_;
-    $c->response->body('Page not found');
-    $c->response->status(404);
 }
 
 =head1 AUTHOR

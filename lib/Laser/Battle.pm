@@ -1,5 +1,6 @@
 package Laser::Battle;
 use Moose;
+use Redis;
 use namespace::autoclean;
 
 use Catalyst::Runtime 5.80;
@@ -35,7 +36,6 @@ $VERSION = eval $VERSION;
 # details given here can function as a default configuration,
 # with an external configuration file acting as an override for
 # local deployment.
-
 __PACKAGE__->config(
     name => 'Laser::Battle',
     # Disable deprecated behavior needed by old applications
