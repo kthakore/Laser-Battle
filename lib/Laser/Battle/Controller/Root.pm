@@ -141,7 +141,8 @@ sub warp :Chained('/') PathPart('warp') Args(0) {
 	my $robot;
 
 	my $redis = $c->stash->{redis};
-	
+
+	$redis->setnx( 'update' => 1 );	
 
 	if( $r_id )
 	{
@@ -193,12 +194,17 @@ sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
 	my ($self, $c) = @_;
     my ($header, $text, $name, $method, $empty);
 
+    my $redis = $c->stash->{redis};
+	my $update = $redis->get('update');
+
+	if( $update == 0 )
+	{
+		# Wait here?
+	}
+	else {
     $name = $c->request->param('PICometName');
     $method = $c->request->param('PICometMethod');
-
-    my $redis = $c->stash->{redis};
-
-    my $total_robots = $redis->get('total_robots');
+	my $total_robots = $redis->get('total_robots');
 
     my @robots;
     foreach( 0..$total_robots)
@@ -226,6 +232,8 @@ sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
 	 $c->response->header( 'Content-Type' => $header );
 
     $c->response->body( $str );
+	$redis->setnx( 'update' => 0 );
+   }
 }
 
 sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
@@ -240,6 +248,7 @@ my ($self, $c) = @_;
 		$hero->{health} = $params->{health} if $params->{health};
 
 
+	$redis->setnx( 'update' => 1 );	
 	$c->response->body('done');
 
 }
