@@ -207,13 +207,13 @@ sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
     my $hero = get_hero($redis);
 
     # my $json_send = { message => 'connected', hero => $hero, robots => \@robots };
-    my $text = "connected!!";
+    $text = "connected!!";
 
    
     my $str = "";
     if ( $method == 1 ) {
 	$header = 'text/plain';
-	$str .= "<comet>$text</comet";
+	$str .= "<comet>$text</comet>";
     } elsif($method == 2) {
 	$header = 'application/x-dom-event-stream';
 	$str .= "Event: $name";
