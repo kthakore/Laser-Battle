@@ -8,13 +8,11 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
-
-
 #
 # Sets the actions in this controller to be registered with no prefix
 # so they function identically to actions created in MyApp.pm
 #
-__PACKAGE__->config(namespace => '');
+__PACKAGE__->config( namespace => '' );
 
 =head1 NAME
 
@@ -33,228 +31,213 @@ The root page (/)
 =cut
 
 sub auto : Private {
-	my ($self, $c) = @_;
-
-	my $redis = Redis->new( encoding => undef );
-
-	$redis->setnx('total_robots' => 0 ) unless $redis->exists('total_robots');
-
-	$c->stash->{'redis'} = $redis;
-
-
-}
-
-sub index :Path :Args(0) {
     my ( $self, $c ) = @_;
 
-	my $r_id = $self->get_robot_id($c);
-	my $robot;
+    my $redis = Redis->new( encoding => undef );
 
-	my $redis = $c->stash->{redis};
-	
-	if( !($r_id) && !( $redis->exists('r_'.$r_id.':id') ) )
-	{
+    $redis->setnx( 'total_robots' => 0 ) unless $redis->exists('total_robots');
 
-	   	# Create a robot 
-		my $x = int(rand() * 600);
-		my $y = int(rand() * 480);
+    $c->stash->{'redis'} = $redis;
 
-		my $health = 100;
-		my $xp = 0;
-
-
-		$robot = init_robot( $redis, $r_id );
-		$self->add_robot_id( $c, $robot->{id} );
-	}
-	$c->stash->{bot} = $robot;	
-
-	$c->stash->{view} = 'root/index.tt';	
-	
 }
 
-sub get_robot_id :Local {
-	my ($self, $c) = @_;
+sub index : Path : Args(0) {
+    my ( $self, $c ) = @_;
 
-		return $c->session->{robot} 
+    my $r_id = $self->get_robot_id($c);
+    my $robot;
+
+    my $redis = $c->stash->{redis};
+
+    if ( !($r_id) && !( $redis->exists( 'r_' . $r_id . ':id' ) ) ) {
+
+        # Create a robot
+        my $x = int( rand() * 600 );
+        my $y = int( rand() * 480 );
+
+        my $health = 100;
+        my $xp     = 0;
+
+        $robot = init_robot( $redis, $r_id );
+        $self->add_robot_id( $c, $robot->{id} );
+    }
+    $c->stash->{bot} = $robot;
+
+    $c->stash->{view} = 'root/index.tt';
+
 }
 
-sub add_robot_id :Local {
-	my ($self, $c, $robot_id) = @_;
+sub get_robot_id : Local {
+    my ( $self, $c ) = @_;
 
-		$c->session->{robot} = $robot_id;
+    return $c->session->{robot};
+}
+
+sub add_robot_id : Local {
+    my ( $self, $c, $robot_id ) = @_;
+
+    $c->session->{robot} = $robot_id;
 
 }
 
 sub get_robot {
-	my $redis = shift;
-	my $id = shift;
+    my $redis = shift;
+    my $id    = shift;
 
-	my %robot;
-	tie %robot, 'Redis::Hash', 'r_'.$id;
+    my %robot;
+    tie %robot, 'Redis::Hash', 'r_' . $id;
 
-	return \%robot;
+    return \%robot;
 }
 
-sub init_robot{
-	my $redis = shift;
+sub init_robot {
+    my $redis = shift;
 
-	my $id = $redis->get('total_robots');
-	$redis->incr('total_robots');
+    my $id = $redis->get('total_robots');
+    $redis->incr('total_robots');
 
-	my $r = get_robot( $redis, $id ) ;
-			my $x = int(rand() * 600);
-		my $y = int(rand() * 480);
+    my $r = get_robot( $redis, $id );
+    my $x = int( rand() * 600 );
+    my $y = int( rand() * 480 );
 
-		my $health = 100;
-		my $xp = 0;
+    my $health = 100;
+    my $xp     = 0;
 
+    $r->{x}      = $x;
+    $r->{y}      = $y;
+    $r->{health} = 100;
+    $r->{xp}     = 0;
+    $r->{id}     = $id;
 
-	$r->{x} = $x; $r->{y} = $y; $r->{health} = 100; 
-	$r->{xp} = 0; $r->{id} = $id; 
-	
-	return $r
+    return $r
 
 }
 
 sub get_hero {
-	my $redis = shift;
+    my $redis = shift;
 
-	my %hero;
-	tie %hero, 'Redis::Hash', 'hero';
+    my %hero;
+    tie %hero, 'Redis::Hash', 'hero';
 
-	unless( $redis->exists( 'hero:id' ) )
-	{
-		$hero{id} = 0;
-		$hero{x} = 0;
-		$hero{y} = 0;
-		$hero{health} = 100;
+    unless ( $redis->exists('hero:id') ) {
+        $hero{id}     = 0;
+        $hero{x}      = 0;
+        $hero{y}      = 0;
+        $hero{health} = 100;
 
-	}
-	
-	return \%hero;
-}
-
-sub warp :Chained('/') PathPart('warp') Args(0) {
-	my($self, $c) = @_;
-
-	my $r_id = $self->get_robot_id($c);
-	my $robot;
-
-	my $redis = $c->stash->{redis};
-
-	$redis->setnx( 'update' => 1 );	
-
-	if( $r_id )
-	{
-		$robot = get_robot($redis, $r_id);
-	}
-		my $x = int(rand() * 600);
-		my $y = int(rand() * 480);
-		$robot->{x} = $x;
-		$robot->{y} = $y;
-	$c->stash->{x} = $x;
-	$c->stash->{y} = $y;
-	
-	$c->forward('View::JSON');
-
-
-}
-
-sub attack :Chained('/') PathPart('attack') Args(0) {
-	my ($self, $c) = @_;
-	
-	
-
-}
-
-sub status :Chained('/') PathPart('status') Args(0) {
-	my ($self, $c) = @_;
-
-	my $redis = $c->stash->{redis};
-
-	my $total_robots = $redis->get('total_robots');
-
-	my @robots;
-	foreach( 0..$total_robots)
-		{ push @robots, get_robot( $redis, $_ ); }
-	
-	my $hero = get_hero($redis);
-	$c->stash->{robots} = \@robots;
-
-	$c->stash->{message} = 'Connected ...';
-	$c->stash->{hero} = $hero;
-
-	$c->stash->{redis} = undef;
-	
-	$c->forward('View::JSON');
-
-}
-
-sub status_comet :Chained('/') PathPart('status_comet') Args(0) {
-	my ($self, $c) = @_;
-    my ($header, $text, $name, $method, $empty);
-
-    my $redis = $c->stash->{redis};
-	my $update = $redis->get('update');
-
-	if( $update == 0 )
-	{
-		# Wait here?
-	}
-	else {
-    $name = $c->request->param('PICometName');
-    $method = $c->request->param('PICometMethod');
-	my $total_robots = $redis->get('total_robots');
-
-    my @robots;
-    foreach( 0..$total_robots)
-        { push @robots, get_robot( $redis, $_ ); }
-
-    my $hero = get_hero($redis);
-
-    # my $json_send = { message => 'connected', hero => $hero, robots => \@robots };
-    $text = "connected!!";
-
-   
-    my $str = "";
-    if ( $method == 1 ) {
-	$header = 'text/plain';
-	$str .= "<comet>$text</comet>";
-    } elsif($method == 2) {
-	$header = 'application/x-dom-event-stream';
-	$str .= "Event: $name";
-	$str .= "\ndata: $text\n\n";
-    } elsif( $method == 3 ) {
-	$header = 'text/html';
-	$str .= "<script>parent.PIComet.event.push(\"$text\")</script>";
     }
 
-	 $c->response->header( 'Content-Type' => $header );
-
-    $c->response->body( $str );
-	$redis->setnx( 'update' => 0 );
-   }
+    return \%hero;
 }
 
-sub post_hero :Chained('/') PathPart('post_hero') Args(0) {
-my ($self, $c) = @_;
-	$c->log->debug( Dumper $c->request->parameters );   
+sub warp : Chained('/') PathPart('warp') Args(0) {
+    my ( $self, $c ) = @_;
 
-	my $hero = get_hero( $c->stash->{'redis'} );
-	
-	my $params = $c->request->parameters;
-	$hero->{x} = $params->{x} if $params->{x};
-	$hero->{y} = $params->{y} if $params->{y};
-		$hero->{health} = $params->{health} if $params->{health};
+    my $r_id = $self->get_robot_id($c);
+    my $robot;
+
+    my $redis = $c->stash->{redis};
+
+    $redis->setnx( 'update' => 1 );
+
+    if ($r_id) {
+        $robot = get_robot( $redis, $r_id );
+    }
+    my $x = int( rand() * 600 );
+    my $y = int( rand() * 480 );
+    $robot->{x}    = $x;
+    $robot->{y}    = $y;
+    $c->stash->{x} = $x;
+    $c->stash->{y} = $y;
+            $c->stash->{redis} = undef;
 
 
-	$redis->setnx( 'update' => 1 );	
-	$c->response->body('done');
+    $c->forward('View::JSON');
 
 }
 
+sub attack : Chained('/') PathPart('attack') Args(0) {
+    my ( $self, $c ) = @_;
 
-sub end : ActionClass('RenderView') {}
+}
+
+sub status : Chained('/') PathPart('status') Args(0) {
+    my ( $self, $c ) = @_;
+
+    my $redis = $c->stash->{redis};
+
+    my $total_robots = $redis->get('total_robots');
+
+    my @robots;
+    foreach ( 0 .. $total_robots ) { push @robots, get_robot( $redis, $_ ); }
+
+    my $hero = get_hero($redis);
+    $c->stash->{robots} = \@robots;
+
+    $c->stash->{message} = 'Connected ...';
+    $c->stash->{hero}    = $hero;
+
+    $c->stash->{redis} = undef;
+
+    $c->forward('View::JSON');
+
+}
+
+sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
+    my ( $self, $c ) = @_;
+    my $redis  = $c->stash->{redis};
+    my $update = $redis->get('update');
+
+    while (1) {
+
+        if ($update) {
+
+            my $total_robots = $redis->get('total_robots');
+
+            my @robots;
+            foreach ( 0 .. $total_robots ) {
+                push @robots, get_robot( $redis, $_ );
+            }
+
+            my $hero = get_hero($redis);
+            $c->stash->{robots} = \@robots;
+
+            $c->stash->{message} = 'Connected ...';
+            $c->stash->{hero}    = $hero;
+
+            $c->stash->{redis} = undef;
+
+            $c->forward('View::JSON');
+
+            $redis->setnx( 'update' => 0 );
+
+        }
+
+    }
+
+    sleep(3);
+
+}
+
+sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
+    my ( $self, $c ) = @_;
+    my $redis = $c->stash->{redis};
+    $c->log->debug( Dumper $c->request->parameters );
+
+    my $hero = get_hero( $c->stash->{'redis'} );
+
+    my $params = $c->request->parameters;
+    $hero->{x}      = $params->{x}      if $params->{x};
+    $hero->{y}      = $params->{y}      if $params->{y};
+    $hero->{health} = $params->{health} if $params->{health};
+
+    $redis->setnx( 'update' => 1 );
+    $c->response->body('done');
+
+}
+
+sub end : ActionClass('RenderView') {
+}
 
 =head2 default
 
@@ -262,12 +245,11 @@ Standard 404 error page
 
 =cut
 
-sub default :Path {
+sub default : Path {
     my ( $self, $c ) = @_;
-    $c->response->body( 'Page not found' );
+    $c->response->body('Page not found');
     $c->response->status(404);
 }
-
 
 =head1 AUTHOR
 

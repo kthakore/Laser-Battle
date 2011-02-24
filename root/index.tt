@@ -5,10 +5,6 @@
 <link media="only screen and (max-device-width: 480px)" href="[% c.uri_for('/static/') %]style.css" type= "text/css" rel="stylesheet" />
 <script src="[% c.uri_for('/static/javascript/ext/jquery-1.4.4.min.js') %]"
   type="text/javascript"></script>
-<script src="[% c.uri_for('/static/javascript/ext/pi.1.1.1.min.js') %]"  
-  type="text/javascript"></script>
-<script src="[% c.uri_for('/static/javascript/ext/pi.comet.1.2.js') %]"  
-  type="text/javascript"></script>
 </head>
 <body>
 <script>
@@ -60,12 +56,31 @@ XP: [% bot.xp %] Health: [% bot.health %]
 <div class="footer"> </div>
 <script>
 
-	var stream = pi.comet.get(
-		'[% c.uri_for('/status_comet') %]',
-		function (_response) { alert(_response ); },
-		function () { alert('Connection is closed'); }
+function callComplete(response)
+{
+	alert("Response recv is : "+response);
+	$('#canvas').html('');
+	for(i=0; i < json.robots.length; i++)
+	{
+		var robot = json.robots[i];
+		$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px " alt="'+robot['id']+'" />' );
 
-	);
+	}
+	$('#canvas').append(' <div style=" position: relative; left:'+json.hero.x+'px; top:'+json.hero.y+'px ">Hero</div>' );
+
+
+};
+
+function connect() {
+
+	alert('Trying to connect');
+	$.post('[% c.uri_for('/status_comet') %]', {}, callComplete, 'json');
+
+
+}
+
+$(document).ready( function() { connect(); } );
+
 </script>
 <pre>
 	function canvas_update()
