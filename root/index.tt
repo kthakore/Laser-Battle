@@ -78,10 +78,9 @@ function connect() {
 
 }
 
-	$.post('[% c.uri_for('/status') %]', {}, callComplete, 'json');
+$(document).ready( function() {	$.post('[% c.uri_for('/status') %]', {}, callComplete, 'json') } );
 
 
-$('#poll').click( function() { connect(); } );
 
 </script>
 </body>

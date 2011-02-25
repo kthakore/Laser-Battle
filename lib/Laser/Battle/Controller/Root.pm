@@ -102,7 +102,7 @@ sub status : Chained('/') PathPart('status') Args(0) {
 
     my $total_robots = $redis->get('total_robots');
     my @robots;
-    foreach ( 0 .. $total_robots ) { push @robots, get_robot( $redis, $_ ); }
+    foreach ( 0 .. ($total_robots-1) ) { push @robots, get_robot( $redis, $_ ); }
 
     $c->stash->{robots}  = \@robots;
     $c->stash->{message} = 'Connected ...';
@@ -125,7 +125,7 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
             my $total_robots = $redis->get('total_robots');
 
             my @robots;
-            foreach ( 0 .. $total_robots ) {
+            foreach ( 0 .. ($total_robots-1) ) {
                 push @robots, get_robot( $redis, $_ );
             }
 
@@ -199,14 +199,18 @@ sub get_robot {
     my $redis = shift;
     my $id    = shift;
 
-	
-    return {
+	warn 'Asking for ID '.$id;	
+   	my $ro = {
         id     => $redis->get( 'r_' . $id . ':id' ),
         x      => $redis->get( 'r_' . $id . ':x' ),
         y      => $redis->get( 'r_' . $id . ':y' ),
         health => $redis->get( 'r_' . $id . ':health' ),
         xp     => $redis->get( 'r_' . $id . ':xp' ),
     };
+	
+	warn Dumper $ro;
+
+	return $ro;
 }
 
 sub init_robot {
@@ -214,8 +218,9 @@ sub init_robot {
 	my $c = shift;
     my $id = $redis->get('total_robots');
 
-	$id++;	
-    $redis->set( total_robots => $id );
+	 $redis->incr('total_robots');
+
+	warn "Making new $id robot";
     my $x = int( rand() * 600 );
     my $y = int( rand() * 480 );
 
