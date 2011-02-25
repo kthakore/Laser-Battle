@@ -50,15 +50,15 @@ XP: [% bot.xp %] Health: [% bot.health %]
 <input type="button" value="Attack" onclick="attack() " />
 <br />
 <input type="button" value="Warp Away" onclick="warp()"/>
+<input type="button" value="Start Polling" id="poll" onclick="warp()"/>
 </form>
 <br />
 <div id="canvas" style="width:800px; height:600px; border: 1px black solid;" > </div>
 <div class="footer"> </div>
 <script>
 
-function callComplete(response)
+function callComplete(json)
 {
-	alert("Response recv is : "+response);
 	$('#canvas').html('');
 	for(i=0; i < json.robots.length; i++)
 	{
@@ -68,46 +68,21 @@ function callComplete(response)
 	}
 	$('#canvas').append(' <div style=" position: relative; left:'+json.hero.x+'px; top:'+json.hero.y+'px ">Hero</div>' );
 
-
+	connect();
 };
 
 function connect() {
 
-	alert('Trying to connect');
 	$.post('[% c.uri_for('/status_comet') %]', {}, callComplete, 'json');
 
 
 }
 
-$(document).ready( function() { connect(); } );
+	$.post('[% c.uri_for('/status') %]', {}, callComplete, 'json');
+
+
+$('#poll').click( function() { connect(); } );
 
 </script>
-<pre>
-	function canvas_update()
-	{  $.ajax({
-						type: "GET",
-						url: "[% c.uri_for('/status') %]",
-						dataType: "json",
-						cache: false,
-						success: function(json){
-								$('#canvas').html('');
-								for(i=0; i < json.robots.length; i++)
-								{
-									var robot = json.robots[i];
-									$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px " alt="'+robot['id']+'" />' );
-								
-								}
-									$('#canvas').append(' <div style=" position: relative; left:'+json.hero.x+'px; top:'+json.hero.y+'px ">Hero</div>' );
-
-							}
-						});
-
-	}
-
-
-	setInterval( 'canvas_update()', 400 );
-
-
-</pre>
 </body>
 </html>

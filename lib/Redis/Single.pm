@@ -7,7 +7,7 @@ my $redis;
 
 sub redis
 {
-	$redis ||= Redis->new();
+	$redis ||= Redis->new( encoding => undef);
 	return $redis;
 	
 }

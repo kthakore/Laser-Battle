@@ -1,6 +1,10 @@
+use strict;
+use warnings;
+use Redis;
 
-`rm robots.db`;
+my $r = Redis->new();
 
-`sqlite3 robots.db < robots.sql`;
+$r->set(total_robots => 0 );
 
-`script/laser_battle_create.pl model DB DBIC::Schema Laser::Battle::Schema create=static overwrite_modifications 'dbi:SQLite:dbname=robots.db' '' ''`
+$r->flushall();
+

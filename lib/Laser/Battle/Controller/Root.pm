@@ -1,7 +1,6 @@
 package Laser::Battle::Controller::Root;
 use Moose;
 use Redis;
-use Redis::Hash;
 use Data::Dumper;
 use JSON;
 use namespace::autoclean;
@@ -33,8 +32,8 @@ The root page (/)
 sub auto : Private {
     my ( $self, $c ) = @_;
 
-	my $redis = $c->model('Redis::Single')->redis();
-    $redis->setnx( 'total_robots' => 0 ) unless $redis->exists('total_robots');
+    my $redis = $c->model('Redis::Single')->redis();
+    $redis->set( 'total_robots' => 0 ) unless $redis->exists('total_robots');
 
 }
 
@@ -44,9 +43,11 @@ sub index : Path : Args(0) {
     my $r_id = $self->get_robot_id($c);
     my $robot;
 
-   	my $redis = $c->model('Redis::Single')->redis();
+    my $redis = $c->model('Redis::Single')->redis();
 
-    if ( !($r_id) && !( $redis->exists( 'r_' . $r_id . ':id' ) ) ) {
+    if ( !($r_id) || !($redis->get("r_$r_id:id")) ) {
+		
+		$c->log->debug('Calling Init');
 
         # Create a robot
         my $x = int( rand() * 600 );
@@ -55,15 +56,14 @@ sub index : Path : Args(0) {
         my $health = 100;
         my $xp     = 0;
 
-        $robot = init_robot( $redis, $r_id );
+        $robot = init_robot( $redis, $c);
         $self->add_robot_id( $c, $robot->{id} );
     }
-    $c->stash->{bot} = $robot;
-
-    $c->stash->{view} = 'root/index.tt';
-
+    else {
+        $robot = get_robot( $redis, $r_id );
+    }
+    $c->stash->{bot} = $robot; 
 }
-
 
 sub warp : Chained('/') PathPart('warp') Args(0) {
     my ( $self, $c ) = @_;
@@ -71,20 +71,20 @@ sub warp : Chained('/') PathPart('warp') Args(0) {
     my $r_id = $self->get_robot_id($c);
     my $robot;
 
-   	my $redis = $c->model('Redis::Single')->redis();
-
-    $redis->setnx( 'update' => 1 );
+    my $redis = $c->model('Redis::Single')->redis();
+    $redis->set( update => 1 );
 
     if ($r_id) {
         $robot = get_robot( $redis, $r_id );
     }
     my $x = int( rand() * 600 );
     my $y = int( rand() * 480 );
-    $robot->{x}    = $x;
-    $robot->{y}    = $y;
+
+    $redis->set( 'r_' . $r_id . ':x' => $x );
+    $redis->set( 'r_' . $r_id . ':y' => $y );
+
     $c->stash->{x} = $x;
     $c->stash->{y} = $y;
-
 
     $c->forward('View::JSON');
 
@@ -98,33 +98,29 @@ sub attack : Chained('/') PathPart('attack') Args(0) {
 sub status : Chained('/') PathPart('status') Args(0) {
     my ( $self, $c ) = @_;
 
-
     my $redis = $c->model('Redis::Single')->redis();
 
     my $total_robots = $redis->get('total_robots');
-
     my @robots;
     foreach ( 0 .. $total_robots ) { push @robots, get_robot( $redis, $_ ); }
 
-    my $hero = get_hero($redis);
-    $c->stash->{robots} = \@robots;
-
+    $c->stash->{robots}  = \@robots;
     $c->stash->{message} = 'Connected ...';
-    $c->stash->{hero}    = $hero;
+    my $hero = get_hero($redis);
+    $c->stash->{hero} = $hero;
     $c->forward('View::JSON');
 
 }
 
 sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
     my ( $self, $c ) = @_;
-   
+
     my $redis = $c->model('Redis::Single')->redis();
-   
+
     while (1) {
 
-		my $update = $redis->get('update');
-
-        if ($update) {
+        my $update = $redis->get('update');
+        if ( $update && $update == 1 ) {
 
             my $total_robots = $redis->get('total_robots');
 
@@ -139,33 +135,30 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
             $c->stash->{message} = 'Connected ...';
             $c->stash->{hero}    = $hero;
 
-            $c->stash->{redis} = undef;
-
             $c->forward('View::JSON');
 
-            $redis->setnx( 'update' => 0 );
+            $redis->set( update => 0 );
 
+            my $update = $redis->get('update');
+            $c->log->debug("Sent a response turn off Update is $update");
+
+            last;
         }
-
     }
-
-    sleep(3);
 
 }
 
 sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
     my ( $self, $c ) = @_;
-  
+
     my $redis = $c->model('Redis::Single')->redis();
- 
-	my $hero = get_hero( $c->stash->{'redis'} );
 
     my $params = $c->request->parameters;
-    $hero->{x}      = $params->{x}      if $params->{x};
-    $hero->{y}      = $params->{y}      if $params->{y};
-    $hero->{health} = $params->{health} if $params->{health};
+    $redis->set( 'hero:x' => $params->{x} )     if $params->{x};
+    $redis->set( 'hero:y' => $params->{y} )     if $params->{y};
+    $redis->set( 'hero:health' => $params->{health} ) if $params->{health};
 
-    $redis->setnx( 'update' => 1 );
+    $redis->set( update => 1 );
     $c->response->body('done');
 
 }
@@ -189,7 +182,6 @@ sub default : Path {
 
 =cut
 
-
 sub get_robot_id : Local {
     my ( $self, $c ) = @_;
 
@@ -207,50 +199,67 @@ sub get_robot {
     my $redis = shift;
     my $id    = shift;
 
-    my %robot;
-    tie %robot, 'Redis::Hash', 'r_' . $id;
-
-    return \%robot;
+	
+    return {
+        id     => $redis->get( 'r_' . $id . ':id' ),
+        x      => $redis->get( 'r_' . $id . ':x' ),
+        y      => $redis->get( 'r_' . $id . ':y' ),
+        health => $redis->get( 'r_' . $id . ':health' ),
+        xp     => $redis->get( 'r_' . $id . ':xp' ),
+    };
 }
 
 sub init_robot {
     my $redis = shift;
-
+	my $c = shift;
     my $id = $redis->get('total_robots');
-    $redis->incr('total_robots');
 
-    my $r = get_robot( $redis, $id );
+	$id++;	
+    $redis->set( total_robots => $id );
     my $x = int( rand() * 600 );
     my $y = int( rand() * 480 );
 
     my $health = 100;
     my $xp     = 0;
 
-    $r->{x}      = $x;
-    $r->{y}      = $y;
-    $r->{health} = 100;
-    $r->{xp}     = 0;
-    $r->{id}     = $id;
-
-    return $r
+	my $tag = "r_$id:";
+    my @keys = qw/ x y health xp id/;
+	my @values = ( $x, $y, 100, 0, $id );
+	foreach( 0..$#keys )
+	{
+		$redis->set($tag.$keys[$_] => $values[$_]);
+	}
+    return get_robot( $redis, $id);
 
 }
 
 sub get_hero {
     my $redis = shift;
 
-    my %hero;
-    tie %hero, 'Redis::Hash', 'hero';
+    my $hero;
 
     unless ( $redis->exists('hero:id') ) {
-        $hero{id}     = 0;
-        $hero{x}      = 0;
-        $hero{y}      = 0;
-        $hero{health} = 100;
+
+        $hero = {
+            id     => 0,
+            x      => 0,
+            y      => 0,
+            health => 100
+        };
+
+    }
+    else {
+
+        $hero = {
+            id     => $redis->get('hero:id'),
+            x      => $redis->get('hero:x'),
+            y      => $redis->get('hero:y'),
+            health => $redis->get('hero:health')
+        };
 
     }
 
-    return \%hero;
+    return $hero;
 }
 
 =head1 AUTHOR
