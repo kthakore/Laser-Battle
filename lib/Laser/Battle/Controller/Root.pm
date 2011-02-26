@@ -2,6 +2,7 @@ package Laser::Battle::Controller::Root;
 use Moose;
 use Redis;
 use Data::Dumper;
+use Try::Tiny;
 use JSON;
 use namespace::autoclean;
 
@@ -33,7 +34,17 @@ sub auto : Private {
     my ( $self, $c ) = @_;
 
     my $redis = $c->model('Redis::Single')->redis();
+
+    try{
     $redis->set( 'total_robots' => 0 ) unless $redis->exists('total_robots');
+	}
+    catch 
+	 {
+	$c->model('Redis::Single')->_refresh();
+	$redis = $c->model('Redis::Single')->redis();
+	$redis->set( 'total_robots' => 0 ) unless 
+		$redis->exists('total_robots');
+	};
 
 }
 

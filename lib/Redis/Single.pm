@@ -9,7 +9,12 @@ sub redis
 {
 	$redis ||= Redis->new( encoding => undef);
 	return $redis;
-	
+}
+
+sub _refresh {
+
+	$redis = Redis->new( encoding => undef );
+
 }
 
 1;
