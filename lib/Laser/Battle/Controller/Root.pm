@@ -70,8 +70,8 @@ sub warp : Chained('/') PathPart('warp') Args(0) {
     my $robot;
 
     my $redis = $c->model('Redis::Single')->redis();
-    $redis->set( update => 1 );
 
+	release_all_clients( $redis );
     if ($r_id) {
         $robot = get_robot( $redis, $r_id );
     }
@@ -116,10 +116,11 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
     my ( $self, $c ) = @_;
 
     my $redis = $c->model('Redis::Single')->redis();
+    my $r_id = $self->get_robot_id($c);
+    
+while (1) {
 
-    while (1) {
-
-        my $update = $redis->get('update');
+        my $update = $redis->get('r_'.$r_id.':update');
         if ( $update && $update == 1 ) {
 
             my $total_robots = $redis->get('total_robots');
@@ -137,10 +138,7 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
 
             $c->forward('View::JSON');
 
-            $redis->set( update => 0 );
-
-            my $update = $redis->get('update');
-
+            $redis->set( 'r_'.$r_id.':update'  => 0 );
             last;
         }
     }
@@ -154,11 +152,11 @@ sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
 
     my $params = $c->request->parameters;
 
-    $redis->set( 'hero:x'      => $params->{x} ) ;
-    $redis->set( 'hero:y'      => $params->{y} ) ;
-    $redis->set( 'hero:health' => $params->{health} ) ;
+    $redis->set( 'hero:x'      => $params->{x} );
+    $redis->set( 'hero:y'      => $params->{y} );
+    $redis->set( 'hero:health' => $params->{health} );
 
-    $redis->set( update => 1 );
+	release_all_clients( $redis );
     $c->response->body('done');
 
 }
@@ -248,27 +246,37 @@ sub get_hero {
             health => 100
         };
 
-		my @keys = keys %$hero;
-		foreach( @keys )
-		{
-			$redis->set('hero:'.$_ => $hero->{$_} );
-		}
+        my @keys = keys %$hero;
+        foreach (@keys) {
+            $redis->set( 'hero:' . $_ => $hero->{$_} );
+        }
 
     }
     else {
 
-		my $x = $redis->get('hero:x'); 
+        my $x = $redis->get('hero:x');
 
-		
-		my @keys = qw/ id x y health/;
+        my @keys = qw/ id x y health/;
 
-		foreach( @keys )
-		{
-			$hero->{$_} = $redis->get('hero:'.$_);
-		}
+        foreach (@keys) {
+            $hero->{$_} = $redis->get( 'hero:' . $_ );
+        }
     }
 
     return $hero;
+}
+
+
+sub release_all_clients{
+my $redis = shift;
+            my $total_robots = $redis->get('total_robots');
+
+            my @robots;
+            foreach ( 0 .. ( $total_robots - 1 ) ) {
+				$redis->set('r_'.$_.':update' => 1 );
+            }
+
+
 }
 
 =head1 AUTHOR
