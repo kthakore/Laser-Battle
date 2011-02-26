@@ -82,7 +82,7 @@ sub move_handle {
 	my $self = shift;
 	my ($dt, $app, $time) = @_;
 
-	my $vel = 3*$dt;
+	my $vel = 10*$dt;
 
 	if( $self->pressed->{left} )
 	{
@@ -129,7 +129,7 @@ sub send_to_server {
 my $self = shift;
 my $uri = shift;
 
-#	get( $uri.'/post_hero?x='.$self->x.'&y='.$self->y.'&health='.$self->hp );
+	get( $uri.'/post_hero?x='.$self->x.'&y='.$self->y.'&health='.$self->hp );
 
 }
  

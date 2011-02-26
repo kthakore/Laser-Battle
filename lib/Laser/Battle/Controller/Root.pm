@@ -45,9 +45,7 @@ sub index : Path : Args(0) {
 
     my $redis = $c->model('Redis::Single')->redis();
 
-    if ( !($r_id) || !($redis->get("r_$r_id:id")) ) {
-		
-		$c->log->debug('Calling Init');
+    if ( !($r_id) || !( $redis->get("r_$r_id:id") ) ) {
 
         # Create a robot
         my $x = int( rand() * 600 );
@@ -56,13 +54,13 @@ sub index : Path : Args(0) {
         my $health = 100;
         my $xp     = 0;
 
-        $robot = init_robot( $redis, $c);
+        $robot = init_robot( $redis, $c );
         $self->add_robot_id( $c, $robot->{id} );
     }
     else {
         $robot = get_robot( $redis, $r_id );
     }
-    $c->stash->{bot} = $robot; 
+    $c->stash->{bot} = $robot;
 }
 
 sub warp : Chained('/') PathPart('warp') Args(0) {
@@ -102,7 +100,9 @@ sub status : Chained('/') PathPart('status') Args(0) {
 
     my $total_robots = $redis->get('total_robots');
     my @robots;
-    foreach ( 0 .. ($total_robots-1) ) { push @robots, get_robot( $redis, $_ ); }
+    foreach ( 0 .. ( $total_robots - 1 ) ) {
+        push @robots, get_robot( $redis, $_ );
+    }
 
     $c->stash->{robots}  = \@robots;
     $c->stash->{message} = 'Connected ...';
@@ -125,7 +125,7 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
             my $total_robots = $redis->get('total_robots');
 
             my @robots;
-            foreach ( 0 .. ($total_robots-1) ) {
+            foreach ( 0 .. ( $total_robots - 1 ) ) {
                 push @robots, get_robot( $redis, $_ );
             }
 
@@ -140,7 +140,6 @@ sub status_comet : Chained('/') PathPart('status_comet') Args(0) {
             $redis->set( update => 0 );
 
             my $update = $redis->get('update');
-            $c->log->debug("Sent a response turn off Update is $update");
 
             last;
         }
@@ -154,9 +153,10 @@ sub post_hero : Chained('/') PathPart('post_hero') Args(0) {
     my $redis = $c->model('Redis::Single')->redis();
 
     my $params = $c->request->parameters;
-    $redis->set( 'hero:x' => $params->{x} )     if $params->{x};
-    $redis->set( 'hero:y' => $params->{y} )     if $params->{y};
-    $redis->set( 'hero:health' => $params->{health} ) if $params->{health};
+
+    $redis->set( 'hero:x'      => $params->{x} ) ;
+    $redis->set( 'hero:y'      => $params->{y} ) ;
+    $redis->set( 'hero:health' => $params->{health} ) ;
 
     $redis->set( update => 1 );
     $c->response->body('done');
@@ -199,42 +199,38 @@ sub get_robot {
     my $redis = shift;
     my $id    = shift;
 
-	warn 'Asking for ID '.$id;	
-   	my $ro = {
+    my $ro = {
         id     => $redis->get( 'r_' . $id . ':id' ),
         x      => $redis->get( 'r_' . $id . ':x' ),
         y      => $redis->get( 'r_' . $id . ':y' ),
         health => $redis->get( 'r_' . $id . ':health' ),
         xp     => $redis->get( 'r_' . $id . ':xp' ),
     };
-	
-	warn Dumper $ro;
 
-	return $ro;
+    return $ro;
 }
 
 sub init_robot {
     my $redis = shift;
-	my $c = shift;
-    my $id = $redis->get('total_robots');
+    my $c     = shift;
+    my $id    = $redis->get('total_robots');
 
-	 $redis->incr('total_robots');
+    $redis->incr('total_robots');
 
-	warn "Making new $id robot";
+    warn "Making new $id robot";
     my $x = int( rand() * 600 );
     my $y = int( rand() * 480 );
 
     my $health = 100;
     my $xp     = 0;
 
-	my $tag = "r_$id:";
-    my @keys = qw/ x y health xp id/;
-	my @values = ( $x, $y, 100, 0, $id );
-	foreach( 0..$#keys )
-	{
-		$redis->set($tag.$keys[$_] => $values[$_]);
-	}
-    return get_robot( $redis, $id);
+    my $tag    = "r_$id:";
+    my @keys   = qw/ x y health xp id/;
+    my @values = ( $x, $y, 100, 0, $id );
+    foreach ( 0 .. $#keys ) {
+        $redis->set( $tag . $keys[$_] => $values[$_] );
+    }
+    return get_robot( $redis, $id );
 
 }
 
@@ -243,25 +239,33 @@ sub get_hero {
 
     my $hero;
 
-    unless ( $redis->exists('hero:id') ) {
+    if ( $redis->exists('hero:id') ) {
 
         $hero = {
-            id     => 0,
+            id     => 1,
             x      => 0,
             y      => 0,
             health => 100
         };
 
+		my @keys = keys %$hero;
+		foreach( @keys )
+		{
+			$redis->set('hero:'.$_ => $hero->{$_} );
+		}
+
     }
     else {
 
-        $hero = {
-            id     => $redis->get('hero:id'),
-            x      => $redis->get('hero:x'),
-            y      => $redis->get('hero:y'),
-            health => $redis->get('hero:health')
-        };
+		my $x = $redis->get('hero:x'); 
 
+		
+		my @keys = qw/ id x y health/;
+
+		foreach( @keys )
+		{
+			$hero->{$_} = $redis->get('hero:'.$_);
+		}
     }
 
     return $hero;
