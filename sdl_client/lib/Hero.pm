@@ -70,6 +70,7 @@ sub event_handle {
 	my $name = SDL::Events::get_key_name($key) if $key;
 	    if ( $event->type == SDL_KEYDOWN ) {
             $self->pressed->{$name} = 1;
+			$self->{update} = 1;
         }
         elsif ( $event->type == SDL_KEYUP ) {
             $self->pressed->{$name} = 0;
@@ -129,8 +130,11 @@ sub send_to_server {
 my $self = shift;
 my $uri = shift;
 
+	if( $self->{update} )
+	{
 	get( $uri.'/post_hero?x='.$self->x.'&y='.$self->y.'&health='.$self->hp );
-
+		$self->{update} = 0;
+	}
 }
  
 
