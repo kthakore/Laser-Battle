@@ -34,6 +34,8 @@ my $timed_update = 0;
 		{
 
 			my $msg = get($uri.'/status');
+			$hero->send_to_server($uri);
+
 		$q1->put($msg);
 
 		cede;
@@ -63,7 +65,6 @@ sub
 		{
 			warn 'Processing message';
 			$game_status = $status;
-			$hero->send_to_server($uri);
 
 		}
 	}

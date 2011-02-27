@@ -77,23 +77,33 @@ sub index : Path : Args(0) {
 sub warp : Chained('/') PathPart('warp') Args(0) {
     my ( $self, $c ) = @_;
 
-    my $r_id = $self->get_robot_id($c);
-    my $robot;
-
+	my $r_id = $self->get_robot_id($c);
     my $redis = $c->model('Redis::Single')->redis();
 
-	release_all_clients( $redis );
-    if ($r_id) {
-        $robot = get_robot( $redis, $r_id );
-    }
-    my $x = int( rand() * 600 );
-    my $y = int( rand() * 480 );
+    unless( $redis->get('r_'.$r_id.':warping') )
+	{
+		$redis->set('r_'.$r_id.':warping' => 1 );
 
-    $redis->set( 'r_' . $r_id . ':x' => $x );
-    $redis->set( 'r_' . $r_id . ':y' => $y );
+		my $x = int( rand() * 600 );
+		my $y = int( rand() * 480 );
 
-    $c->stash->{x} = $x;
-    $c->stash->{y} = $y;
+		$redis->set( 'r_' . $r_id . ':x' => $x );
+		$redis->set( 'r_' . $r_id . ':y' => $y );
+
+		$c->stash->{x} = $x;
+		$c->stash->{y} = $y;
+
+		$redis->set('r_'.$r_id.':warping' => 0 );
+		release_all_clients( $redis );
+
+
+	}
+	else
+	{
+		my $robot = get_robot($redis, $r_id) if $r_id;
+		$c->stash->{x} = $robot->{x};
+		$c->stash->{y} = $robot->{y};
+	}
 
     $c->forward('View::JSON');
 
