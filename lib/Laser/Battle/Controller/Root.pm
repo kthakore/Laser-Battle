@@ -184,6 +184,7 @@ while (1) {
             $redis->set( 'r_'.$r_id.':update'  => 0 );
             last;
         }
+	sleep(1);
     }
 
 }
