@@ -90,27 +90,49 @@ sub warp : Chained('/') PathPart('warp') Args(0) {
 		$redis->set( 'r_' . $r_id . ':x' => $x );
 		$redis->set( 'r_' . $r_id . ':y' => $y );
 
-		$c->stash->{x} = $x;
-		$c->stash->{y} = $y;
-
 		$redis->set('r_'.$r_id.':warping' => 0 );
 		release_all_clients( $redis );
-
-
 	}
-	else
-	{
-		my $robot = get_robot($redis, $r_id) if $r_id;
-		$c->stash->{x} = $robot->{x};
-		$c->stash->{y} = $robot->{y};
-	}
-
+		my $robot = get_robot( $redis, $r_id );
+			$c->stash->{robot} = $robot;
+		
     $c->forward('View::JSON');
 
 }
 
 sub attack : Chained('/') PathPart('attack') Args(0) {
     my ( $self, $c ) = @_;
+
+	my $r_id = $self->get_robot_id($c);
+    my $redis = $c->model('Redis::Single')->redis();
+    unless( $redis->get('r_'.$r_id.':attacking') )
+	{
+		my $robot = get_robot( $redis, $r_id );
+		my $hero  = get_hero ( $redis );		
+
+		$redis->set('r_'.$r_id.':attacking' => 1 );
+		# Check dist
+		my $dist = sqrt( ($robot->{x} - $hero->{x} )**2 + ( $robot->{y} - $hero->{y} )**2 );
+		
+		$c->stash->{dist} = $dist;
+		if ( $dist < 200 )
+		{
+		# Apply rand attack
+			my $attack_power = int(rand()*10);
+			$redis->set('r_'.$r_id.':xp' => $attack_power + $robot->{xp});	
+			$c->stash->{hit} => $attack_power;
+		
+		}
+		
+		$redis->set('r_'.$r_id.':attacking' => 0 );
+		release_all_clients( $redis );
+	}
+		my $robot = get_robot( $redis, $r_id );
+		my $hero  = get_hero ( $redis );		
+		$c->stash->{robot} = $robot;
+		$c->stash->{hero} = $hero;
+    $c->forward('View::JSON');
+
 
 }
 

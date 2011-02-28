@@ -13,11 +13,12 @@ function attack()
 
 	var data = $.ajax({
 						type: "GET",
-						url: "[% c.uri_for('/status') %]",
+						url: "[% c.uri_for('/attack') %]",
 						dataType: "json",
 						cache: false,
 						success: function(json){
-								alert( json.message);
+								$('#status').html( 'XP: '+json.robot.xp+' Health:'+json.robot.health );
+								$('#position').html( 'X: '+json.robot.x+' Y:'+json.robot.y );
 							}
 						});
 
@@ -31,7 +32,7 @@ function warp()
 						dataType: "json",
 						cache: false,
 						success: function(json){
-								$('#position').html( 'X: '+json.x+' Y:'+json.y );
+								$('#position').html( 'X: '+json.robot.x+' Y:'+json.robot.y );
 							}
 						});
 
@@ -42,7 +43,7 @@ function warp()
 Welcome Killer Bot [% bot.id %].
 </p>
 <div>
-XP: [% bot.xp %] Health: [% bot.health %]
+<div id="status"> XP: [% bot.xp %] Health: [% bot.health %] </div>
 <div id="position" > X: [% bot.x %] Y: [% bot.y %] </div>
 </div>
 <form>
@@ -50,7 +51,6 @@ XP: [% bot.xp %] Health: [% bot.health %]
 <input type="button" value="Attack" onclick="attack() " />
 <br />
 <input type="button" value="Warp Away" onclick="warp()"/>
-<input type="button" value="Start Polling" id="poll" onclick="warp()"/>
 </form>
 <br />
 <div id="canvas" style="width:800px; height:600px; border: 1px black solid;" > </div>
@@ -60,13 +60,16 @@ XP: [% bot.xp %] Health: [% bot.health %]
 function callComplete(json)
 {
 	$('#canvas').html('');
+	var c_p = $('#canvas').position();
 	for(i=0; i < json.robots.length; i++)
 	{
 		var robot = json.robots[i];
-		$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: relative; left:'+robot['x']+'px; top:'+robot['y']+'px " alt="'+robot['id']+'" />' );
+		var y = parseFloat(robot['y']) + c_p.top;
+		$('#canvas').append(' <img src="[%c.uri_for('/static/images/robot.png') %]" style=" position: absolute; left:'+robot['x']+'px; top:'+y+'px " alt="'+robot['id']+'" />' );
 
 	}
-	$('#canvas').append(' <div style=" position: relative; left:'+json.hero.x+'px; top:'+json.hero.y+'px ">Hero</div>' );
+	var h_y =  parseFloat(json.hero.y) + c_p.top;
+	$('#canvas').append(' <div style=" position: absolute; left:'+json.hero.x+'px; top:'+h_y+'px ">Hero</div>' );
 
 	connect();
 };
